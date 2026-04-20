@@ -1,0 +1,286 @@
+name: Build Node.js from Source
+
+on:
+  workflow_dispatch:
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.get-tag.outputs.tag }}
+    steps:
+      - name: Get latest v24.x tag
+        id: get-tag
+        run: |
+          TAG=v24.14.1
+          # TAG=$(git ls-remote --tags https://github.com/nodejs/node.git \
+          #   | grep -oP 'refs/tags/v24\.\d+\.\d+$' \
+          #   | sort -V | tail -1 | sed 's|refs/tags/||')
+          echo "Resolved tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  # # ─────────────────────────────────────────────
+  # # Linux x64
+  # # ─────────────────────────────────────────────
+  # build-linux-x64:
+  #   needs: resolve-version
+  #   runs-on: ubuntu-22.04
+  #   env:
+  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+  #   steps:
+  #     - name: Install build dependencies
+  #       run: |
+  #         sudo apt-get update -q
+  #         sudo apt-get install -y -q \
+  #           python3 g++ make git \
+  #           libssl-dev pkg-config \
+  #           xz-utils curl ca-certificates
+
+  #     - name: Clone Node.js ${{ env.NODE_TAG }}
+  #       run: |
+  #         git clone --depth 1 --branch "$NODE_TAG" \
+  #           https://github.com/nodejs/node.git node-src
+
+  #     - name: Configure
+  #       working-directory: node-src
+  #       run: |
+  #         ./configure \
+  #           --prefix=/usr/local \
+  #           --release-urlbase=https://nodejs.org/download/release/ \
+  #           --tag=""
+
+  #     - name: Build  (this takes 20–40 min)
+  #       working-directory: node-src
+  #       run: make -j$(nproc)
+
+  #     - name: Smoke test
+  #       working-directory: node-src
+  #       run: ./out/Release/node --version
+
+  #     - name: Package tarball
+  #       working-directory: node-src
+  #       run: |
+  #         make tar BINARYNAME=node DISTTYPE=release \
+  #           RELEASE_URLBASE=https://nodejs.org/download/release/
+  #         mv *.tar.gz ../node-${{ env.NODE_TAG }}-linux-x64.tar.gz || \
+  #           tar czf ../node-${{ env.NODE_TAG }}-linux-x64.tar.gz \
+  #             -C out/Release node
+
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: node-${{ env.NODE_TAG }}-linux-x64
+  #         path: node-${{ env.NODE_TAG }}-linux-x64.tar.gz
+  #         retention-days: 30
+
+  # # ─────────────────────────────────────────────
+  # # Linux ARM64  (GitHub-hosted)
+  # # ─────────────────────────────────────────────
+  # build-linux-arm64:
+  #   needs: resolve-version
+  #   runs-on: ubuntu-22.04-arm
+  #   env:
+  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+  #   steps:
+  #     - name: Install build dependencies
+  #       run: |
+  #         sudo apt-get update -q
+  #         sudo apt-get install -y -q \
+  #           python3 g++ make git \
+  #           libssl-dev pkg-config \
+  #           xz-utils curl ca-certificates
+
+  #     - name: Clone Node.js ${{ env.NODE_TAG }}
+  #       run: |
+  #         git clone --depth 1 --branch "$NODE_TAG" \
+  #           https://github.com/nodejs/node.git node-src
+
+  #     - name: Configure
+  #       working-directory: node-src
+  #       run: ./configure --prefix=/usr/local
+
+  #     - name: Build
+  #       working-directory: node-src
+  #       run: make -j$(nproc)
+
+  #     - name: Smoke test
+  #       working-directory: node-src
+  #       run: ./out/Release/node --version
+
+  #     - name: Package tarball
+  #       working-directory: node-src
+  #       run: |
+  #         tar czf ../node-${{ env.NODE_TAG }}-linux-arm64.tar.gz \
+  #           -C out/Release node
+
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: node-${{ env.NODE_TAG }}-linux-arm64
+  #         path: node-${{ env.NODE_TAG }}-linux-arm64.tar.gz
+  #         retention-days: 30
+
+  # # ─────────────────────────────────────────────
+  # # macOS x64
+  # # ─────────────────────────────────────────────
+  # build-macos-x64:
+  #   needs: resolve-version
+  #   runs-on: macos-13          # last Intel runner
+  #   env:
+  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+  #   steps:
+  #     - name: Install build dependencies
+  #       run: brew install python3 openssl pkg-config
+
+  #     - name: Clone Node.js ${{ env.NODE_TAG }}
+  #       run: |
+  #         git clone --depth 1 --branch "$NODE_TAG" \
+  #           https://github.com/nodejs/node.git node-src
+
+  #     - name: Configure
+  #       working-directory: node-src
+  #       run: |
+  #         ./configure \
+  #           --prefix=/usr/local \
+  #           --openssl-use-def-ca-store
+
+  #     - name: Build
+  #       working-directory: node-src
+  #       run: make -j$(sysctl -n hw.logicalcpu)
+
+  #     - name: Smoke test
+  #       working-directory: node-src
+  #       run: ./out/Release/node --version
+
+  #     - name: Package tarball
+  #       working-directory: node-src
+  #       run: |
+  #         tar czf ../node-${{ env.NODE_TAG }}-darwin-x64.tar.gz \
+  #           -C out/Release node
+
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: node-${{ env.NODE_TAG }}-darwin-x64
+  #         path: node-${{ env.NODE_TAG }}-darwin-x64.tar.gz
+  #         retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # macOS ARM64 (Apple Silicon)
+  # ─────────────────────────────────────────────
+  build-macos-arm64:
+    needs: resolve-version
+    runs-on: macos-14  # M1 runner
+    env:
+      NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+    steps:
+      - name: Install build dependencies
+        run: brew install python3 openssl pkg-config ninja
+
+      - uses: actions/checkout@v6
+
+      - name: Clone Node.js ${{ env.NODE_TAG }}
+        run: |
+          git clone --depth 1 --branch "$NODE_TAG" \
+            https://github.com/nodejs/node.git node-src
+
+      - name: Apply patches
+        working-directory: node-src
+        run: |
+          git apply ../patches/support_v8_sandboxed_pointers.patch
+
+      - name: Configure
+        working-directory: node-src
+        run: |
+          ./configure \
+            --ninja \
+            --experimental-enable-pointer-compression \
+            --experimental-pointer-compression-shared-cage \
+            --without-siphash \
+            --prefix=/usr/local \
+            --openssl-use-def-ca-store
+
+      - name: Build
+        working-directory: node-src
+        run: make
+
+      - name: Smoke test
+        working-directory: node-src
+        run: ./out/Release/node --version
+
+      - name: Package tarball
+        working-directory: node-src
+        run: |
+          tar czf ../node-${{ env.NODE_TAG }}-darwin-arm64.tar.gz \
+            -C out/Release node
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-${{ env.NODE_TAG }}-darwin-arm64
+          path: node-${{ env.NODE_TAG }}-darwin-arm64.tar.gz
+          retention-days: 30
+
+  # # ─────────────────────────────────────────────
+  # # Windows x64
+  # # ─────────────────────────────────────────────
+  # build-windows-x64:
+  #   needs: resolve-version
+  #   runs-on: windows-2022
+  #   env:
+  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+  #   steps:
+  #     - name: Install NASM (required by OpenSSL)
+  #       run: choco install nasm -y
+
+  #     - name: Clone Node.js ${{ env.NODE_TAG }}
+  #       run: |
+  #         git clone --depth 1 --branch "$env:NODE_TAG" `
+  #           https://github.com/nodejs/node.git node-src
+
+  #     - name: Build  (vcbuild.bat handles everything on Windows)
+  #       working-directory: node-src
+  #       shell: cmd
+  #       run: vcbuild.bat release x64 no-cctest
+
+  #     - name: Smoke test
+  #       working-directory: node-src
+  #       run: .\Release\node.exe --version
+
+  #     - name: Package zip
+  #       working-directory: node-src
+  #       run: |
+  #         Compress-Archive -Path Release\node.exe `
+  #           -DestinationPath ..\node-${{ env.NODE_TAG }}-win-x64.zip
+  #       shell: pwsh
+
+  #     - name: Upload artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: node-${{ env.NODE_TAG }}-win-x64
+  #         path: node-${{ env.NODE_TAG }}-win-x64.zip
+  #         retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # Summary job — lists all produced artifacts
+  # ─────────────────────────────────────────────
+  summary:
+    needs:
+      # - build-linux-x64
+      # - build-linux-arm64
+      # - build-macos-x64
+      - build-macos-arm64
+      # - build-windows-x64
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Print build summary
+        run: |
+          echo "## Node.js Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          # echo "| Linux x64    | ${{ needs.build-linux-x64.result }} |" >> $GITHUB_STEP_SUMMARY
+          # echo "| Linux ARM64  | ${{ needs.build-linux-arm64.result }} |" >> $GITHUB_STEP_SUMMARY
+          # echo "| macOS x64    | ${{ needs.build-macos-x64.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| macOS ARM64  | ${{ needs.build-macos-arm64.result }} |" >> $GITHUB_STEP_SUMMARY
+          # echo "| Windows x64  | ${{ needs.build-windows-x64.result }} |" >> $GITHUB_STEP_SUMMARY
