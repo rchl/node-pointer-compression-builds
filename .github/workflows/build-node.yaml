@@ -198,8 +198,7 @@ jobs:
             --experimental-enable-pointer-compression \
             --experimental-pointer-compression-shared-cage \
             --without-siphash \
-            --prefix=/usr/local \
-            --openssl-use-def-ca-store
+            --prefix=/usr/local
 
       - name: Build
         working-directory: node-src
