@@ -170,7 +170,7 @@ jobs:
   # ─────────────────────────────────────────────
   build-macos-arm64:
     needs: resolve-version
-    runs-on: macos-14  # M1 runner
+    runs-on: macos-15  # M1/M2 runner — ships with Xcode 16 (Clang 16+)
     env:
       NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
     steps:
