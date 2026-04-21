@@ -14,5 +14,7 @@ git apply ../patches/0001-apply-some-build-fixes-from-electron.patch
     --experimental-enable-pointer-compression \
     --experimental-pointer-compression-shared-cage \
     --without-siphash \
-    --prefix=/usr/local/workspace/node-release
+    --prefix=/usr/local
 make
+rm -rf $(pwd)/../release
+make install DESTDIR=$(pwd)/../release

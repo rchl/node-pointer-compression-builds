@@ -1,9 +1,35 @@
-name: Build Node.js from Source
+name: Build Node.js v24 from Source
 
 on:
   workflow_dispatch:
+    inputs:
+      linux-x64:
+        description: 'Build Linux x64'
+        type: boolean
+        default: true
+      linux-arm64:
+        description: 'Build Linux ARM64'
+        type: boolean
+        default: true
+      macos-x64:
+        description: 'Build macOS x64'
+        type: boolean
+        default: true
+      macos-arm64:
+        description: 'Build macOS ARM64'
+        type: boolean
+        default: true
+      windows-x64:
+        description: 'Build Windows x64'
+        type: boolean
+        default: true
+  schedule:
+    - cron: '0 2 1 * *'  # Monthly, on the 1st at 02:00 UTC
 
 jobs:
+  # ─────────────────────────────────────────────
+  # Resolve the latest v24.x tag from nodejs/node
+  # ─────────────────────────────────────────────
   resolve-version:
     runs-on: ubuntu-latest
     outputs:
@@ -12,201 +38,229 @@ jobs:
       - name: Get latest v24.x tag
         id: get-tag
         run: |
-          TAG=v24.14.1
-          # TAG=$(git ls-remote --tags https://github.com/nodejs/node.git \
-          #   | grep -oP 'refs/tags/v24\.\d+\.\d+$' \
-          #   | sort -V | tail -1 | sed 's|refs/tags/||')
+          TAG=$(git ls-remote --tags https://github.com/nodejs/node.git \
+            | grep -oP 'refs/tags/v24\.\d+\.\d+$' \
+            | sort -V | tail -1 | sed 's|refs/tags/||')
           echo "Resolved tag: $TAG"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
-  # # ─────────────────────────────────────────────
-  # # Linux x64
-  # # ─────────────────────────────────────────────
-  # build-linux-x64:
-  #   needs: resolve-version
-  #   runs-on: ubuntu-22.04
-  #   env:
-  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
-  #   steps:
-  #     - name: Install build dependencies
-  #       run: |
-  #         sudo apt-get update -q
-  #         sudo apt-get install -y -q \
-  #           python3 g++ make git \
-  #           libssl-dev pkg-config \
-  #           xz-utils curl ca-certificates
-
-  #     - name: Clone Node.js ${{ env.NODE_TAG }}
-  #       run: |
-  #         git clone --depth 1 --branch "$NODE_TAG" \
-  #           https://github.com/nodejs/node.git node-src
-
-  #     - name: Configure
-  #       working-directory: node-src
-  #       run: |
-  #         ./configure \
-  #           --prefix=/usr/local \
-  #           --release-urlbase=https://nodejs.org/download/release/ \
-  #           --tag=""
-
-  #     - name: Build  (this takes 20–40 min)
-  #       working-directory: node-src
-  #       run: make -j$(nproc)
-
-  #     - name: Smoke test
-  #       working-directory: node-src
-  #       run: ./out/Release/node --version
-
-  #     - name: Package tarball
-  #       working-directory: node-src
-  #       run: |
-  #         make tar BINARYNAME=node DISTTYPE=release \
-  #           RELEASE_URLBASE=https://nodejs.org/download/release/
-  #         mv *.tar.gz ../node-${{ env.NODE_TAG }}-linux-x64.tar.gz || \
-  #           tar czf ../node-${{ env.NODE_TAG }}-linux-x64.tar.gz \
-  #             -C out/Release node
-
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: node-${{ env.NODE_TAG }}-linux-x64
-  #         path: node-${{ env.NODE_TAG }}-linux-x64.tar.gz
-  #         retention-days: 30
-
-  # # ─────────────────────────────────────────────
-  # # Linux ARM64  (GitHub-hosted)
-  # # ─────────────────────────────────────────────
-  # build-linux-arm64:
-  #   needs: resolve-version
-  #   runs-on: ubuntu-22.04-arm
-  #   env:
-  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
-  #   steps:
-  #     - name: Install build dependencies
-  #       run: |
-  #         sudo apt-get update -q
-  #         sudo apt-get install -y -q \
-  #           python3 g++ make git \
-  #           libssl-dev pkg-config \
-  #           xz-utils curl ca-certificates
-
-  #     - name: Clone Node.js ${{ env.NODE_TAG }}
-  #       run: |
-  #         git clone --depth 1 --branch "$NODE_TAG" \
-  #           https://github.com/nodejs/node.git node-src
-
-  #     - name: Configure
-  #       working-directory: node-src
-  #       run: ./configure --prefix=/usr/local
-
-  #     - name: Build
-  #       working-directory: node-src
-  #       run: make -j$(nproc)
-
-  #     - name: Smoke test
-  #       working-directory: node-src
-  #       run: ./out/Release/node --version
-
-  #     - name: Package tarball
-  #       working-directory: node-src
-  #       run: |
-  #         tar czf ../node-${{ env.NODE_TAG }}-linux-arm64.tar.gz \
-  #           -C out/Release node
-
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: node-${{ env.NODE_TAG }}-linux-arm64
-  #         path: node-${{ env.NODE_TAG }}-linux-arm64.tar.gz
-  #         retention-days: 30
-
-  # # ─────────────────────────────────────────────
-  # # macOS x64
-  # # ─────────────────────────────────────────────
-  # build-macos-x64:
-  #   needs: resolve-version
-  #   runs-on: macos-13          # last Intel runner
-  #   env:
-  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
-  #   steps:
-  #     - name: Install build dependencies
-  #       run: brew install python3 openssl pkg-config
-
-  #     - name: Clone Node.js ${{ env.NODE_TAG }}
-  #       run: |
-  #         git clone --depth 1 --branch "$NODE_TAG" \
-  #           https://github.com/nodejs/node.git node-src
-
-  #     - name: Configure
-  #       working-directory: node-src
-  #       run: |
-  #         ./configure \
-  #           --prefix=/usr/local \
-  #           --openssl-use-def-ca-store
-
-  #     - name: Build
-  #       working-directory: node-src
-  #       run: make -j$(sysctl -n hw.logicalcpu)
-
-  #     - name: Smoke test
-  #       working-directory: node-src
-  #       run: ./out/Release/node --version
-
-  #     - name: Package tarball
-  #       working-directory: node-src
-  #       run: |
-  #         tar czf ../node-${{ env.NODE_TAG }}-darwin-x64.tar.gz \
-  #           -C out/Release node
-
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: node-${{ env.NODE_TAG }}-darwin-x64
-  #         path: node-${{ env.NODE_TAG }}-darwin-x64.tar.gz
-  #         retention-days: 30
-
   # ─────────────────────────────────────────────
-  # macOS ARM64 (Apple Silicon)
+  # Linux x64
   # ─────────────────────────────────────────────
-  build-macos-arm64:
+  build-linux-x64:
     needs: resolve-version
-    runs-on: macos-15  # M1/M2 runner — ships with Xcode 16 (Clang 16+)
+    if: github.event_name != 'workflow_dispatch' || inputs.linux-x64
+    runs-on: ubuntu-22.04
     env:
       NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
     steps:
-      - name: Select Xcode 16
-        # Ensures Clang 16+ is active — required by V8's C++20 TypeIndex cast
-        # in deps/v8/src/wasm/value-type.h (fails on Clang 15 / Xcode 15)
-        run: sudo xcode-select --switch /Applications/Xcode_16.app/Contents/Developer
- 
-      - name: Verify Clang version (must be 16+)
-        run: clang++ --version
-
       - name: Install build dependencies
-        run: brew install python3 openssl pkg-config ninja
-
-      - uses: actions/checkout@v6
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q \
+            python3 g++ make ninja-build git \
+            libssl-dev pkg-config \
+            xz-utils curl ca-certificates
 
       - name: Clone Node.js ${{ env.NODE_TAG }}
         run: |
           git clone --depth 1 --branch "$NODE_TAG" \
             https://github.com/nodejs/node.git node-src
 
+      - name: Checkout repository (for patches)
+        uses: actions/checkout@v6
+        with:
+          path: repo
+
       - name: Apply patches
-        working-directory: node-src
         run: |
-          git apply ../patches/support_v8_sandboxed_pointers.patch
-          git apply ../patches/0001-apply-some-build-fixes-from-electron.patch
+          shopt -s nullglob
+          patches=(repo/patches/*.patch)
+          if [ ${#patches[@]} -eq 0 ]; then
+            echo "No patches found, skipping."
+          else
+            for patch in "${patches[@]}"; do
+              echo "Applying $patch"
+              git -C node-src apply --verbose "../${patch}"
+            done
+          fi
+
 
       - name: Configure
         working-directory: node-src
         run: |
           ./configure \
-            --ninja \
-            --experimental-enable-pointer-compression \
-            --experimental-pointer-compression-shared-cage \
-            --without-siphash \
-            --prefix=/usr/local
+            --prefix=/usr/local \                                     # install root inside the staging directory
+            --release-urlbase=https://nodejs.org/download/release/ \  # base URL embedded in the binary for update checks
+            --tag="" \                                                # clear the build tag so the version string is clean
+            --ninja \                                                 # use Ninja instead of Make — faster incremental builds
+            --experimental-enable-pointer-compression \               # compress V8 heap pointers from 8 to 4 bytes, reducing heap size
+            --experimental-pointer-compression-shared-cage \          # share the pointer compression cage across Isolates in the same process
+            --without-siphash                                         # disable SipHash for V8 hash seeds, using a simpler alternative
+
+      - name: Build  (this takes 20–40 min)
+        working-directory: node-src
+        run: ninja -C out/Release -j$(nproc)
+
+      - name: Smoke test
+        working-directory: node-src
+        run: ./out/Release/node --version
+
+      - name: Install into staging directory
+        working-directory: node-src
+        run: make install DESTDIR=$PWD/../stage
+
+      - name: Smoke test npm
+        run: ../stage/usr/local/bin/npm --version
+        working-directory: node-src
+
+      - name: Package tarball (full install tree)
+        run: |
+          ARCHIVE="node-${{ env.NODE_TAG }}-linux-x64.tar.gz"
+          # tar up everything make install placed under stage/usr/local
+          tar czf "$ARCHIVE" -C stage/usr/local .
+          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          echo "Top-level entries:"
+          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: node-${{ env.NODE_TAG }}-linux-x64
+          path: node-${{ env.NODE_TAG }}-linux-x64.tar.gz
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # Linux ARM64  (GitHub-hosted)
+  # ─────────────────────────────────────────────
+  build-linux-arm64:
+    needs: resolve-version
+    if: github.event_name != 'workflow_dispatch' || inputs.linux-arm64
+    runs-on: ubuntu-22.04-arm
+    env:
+      NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+    steps:
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q \
+            python3 g++ make ninja-build git \
+            libssl-dev pkg-config \
+            xz-utils curl ca-certificates
+
+      - name: Clone Node.js ${{ env.NODE_TAG }}
+        run: |
+          git clone --depth 1 --branch "$NODE_TAG" \
+            https://github.com/nodejs/node.git node-src
+
+      - name: Checkout repository (for patches)
+        uses: actions/checkout@v6
+        with:
+          path: repo
+
+      - name: Apply patches
+        run: |
+          shopt -s nullglob
+          patches=(repo/patches/*.patch)
+          if [ ${#patches[@]} -eq 0 ]; then
+            echo "No patches found, skipping."
+          else
+            for patch in "${patches[@]}"; do
+              echo "Applying $patch"
+              git -C node-src apply --verbose "../${patch}"
+            done
+          fi
+
+
+      - name: Configure
+        working-directory: node-src
+        run: |
+          ./configure \
+            --prefix=/usr/local \                             # install root inside the staging directory
+            --ninja \                                         # use Ninja instead of Make — faster incremental builds
+            --experimental-enable-pointer-compression \       # compress V8 heap pointers from 8 to 4 bytes, reducing heap size
+            --experimental-pointer-compression-shared-cage \  # share the pointer compression cage across Isolates in the same process
+            --without-siphash                                 # disable SipHash for V8 hash seeds, using a simpler alternative
+
+      - name: Build
+        working-directory: node-src
+        run: ninja -C out/Release -j$(nproc)
+
+      - name: Smoke test
+        working-directory: node-src
+        run: ./out/Release/node --version
+
+      - name: Install into staging directory
+        working-directory: node-src
+        run: make install DESTDIR=$PWD/../stage
+
+      - name: Smoke test npm
+        working-directory: node-src
+        run: ../stage/usr/local/bin/npm --version
+
+      - name: Package tarball (full install tree)
+        run: |
+          ARCHIVE="node-${{ env.NODE_TAG }}-linux-arm64.tar.gz"
+          # tar up everything make install placed under stage/usr/local
+          tar czf "$ARCHIVE" -C stage/usr/local .
+          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          echo "Top-level entries:"
+          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: node-${{ env.NODE_TAG }}-linux-arm64
+          path: node-${{ env.NODE_TAG }}-linux-arm64.tar.gz
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # macOS x64
+  # ─────────────────────────────────────────────
+  build-macos-x64:
+    needs: resolve-version
+    if: github.event_name != 'workflow_dispatch' || inputs.macos-x64
+    runs-on: macos-13          # last Intel runner
+    env:
+      NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+    steps:
+      - name: Install build dependencies
+        run: brew install python3 openssl pkg-config ninja
+
+      - name: Clone Node.js ${{ env.NODE_TAG }}
+        run: |
+          git clone --depth 1 --branch "$NODE_TAG" \
+            https://github.com/nodejs/node.git node-src
+
+      - name: Checkout repository (for patches)
+        uses: actions/checkout@v6
+        with:
+          path: repo
+
+      - name: Apply patches
+        run: |
+          shopt -s nullglob
+          patches=(repo/patches/*.patch)
+          if [ ${#patches[@]} -eq 0 ]; then
+            echo "No patches found, skipping."
+          else
+            for patch in "${patches[@]}"; do
+              echo "Applying $patch"
+              git -C node-src apply --verbose "../${patch}"
+            done
+          fi
+
+
+      - name: Configure
+        working-directory: node-src
+        run: |
+          ./configure \
+            --prefix=/usr/local \                             # install root inside the staging directory
+            --openssl-use-def-ca-store \                      # use the macOS system Keychain for CA certificates instead of the bundled Mozilla store
+            --ninja \                                         # use Ninja instead of Make — faster incremental builds
+            --experimental-enable-pointer-compression \       # compress V8 heap pointers from 8 to 4 bytes, reducing heap size
+            --experimental-pointer-compression-shared-cage \  # share the pointer compression cage across Isolates in the same process
+            --without-siphash                                 # disable SipHash for V8 hash seeds, using a simpler alternative
 
       - name: Build
         working-directory: node-src
@@ -216,11 +270,117 @@ jobs:
         working-directory: node-src
         run: ./out/Release/node --version
 
-      - name: Package tarball
+      - name: Install into staging directory
         working-directory: node-src
+        run: make install DESTDIR=$PWD/../stage
+
+      - name: Smoke test npm
+        working-directory: node-src
+        run: ../stage/usr/local/bin/npm --version
+
+      - name: Package tarball (full install tree)
         run: |
-          tar czf ../node-${{ env.NODE_TAG }}-darwin-arm64.tar.gz \
-            -C out/Release node
+          ARCHIVE="node-${{ env.NODE_TAG }}-darwin-x64.tar.gz"
+          # tar up everything make install placed under stage/usr/local
+          tar czf "$ARCHIVE" -C stage/usr/local .
+          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          echo "Top-level entries:"
+          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: node-${{ env.NODE_TAG }}-darwin-x64
+          path: node-${{ env.NODE_TAG }}-darwin-x64.tar.gz
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # macOS ARM64 (Apple Silicon)
+  # ─────────────────────────────────────────────
+  build-macos-arm64:
+    needs: resolve-version
+    if: github.event_name != 'workflow_dispatch' || inputs.macos-arm64
+    runs-on: macos-15  # M1/M2 runner — ships with Xcode 16 (Clang 16+)
+    env:
+      NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+    steps:
+      - name: Select Xcode 16
+        # Ensures Clang 16+ is active — required by V8's C++20 TypeIndex cast
+        # in deps/v8/src/wasm/value-type.h (fails on Clang 15 / Xcode 15)
+        run: sudo xcode-select --switch /Applications/Xcode_16.app/Contents/Developer
+
+      - name: Verify Clang version (must be 16+)
+        run: clang++ --version
+
+      - name: Install build dependencies
+        run: brew install python3 openssl pkg-config ninja
+
+      - name: Clone Node.js ${{ env.NODE_TAG }}
+        run: |
+          git clone --depth 1 --branch "$NODE_TAG" \
+            https://github.com/nodejs/node.git node-src
+
+      - name: Checkout repository (for patches)
+        uses: actions/checkout@v6
+        with:
+          path: repo
+
+      - name: Apply patches
+        run: |
+          shopt -s nullglob
+          patches=(repo/patches/*.patch)
+          if [ ${#patches[@]} -eq 0 ]; then
+            echo "No patches found, skipping."
+          else
+            for patch in "${patches[@]}"; do
+              echo "Applying $patch"
+              git -C node-src apply --verbose "../${patch}"
+            done
+          fi
+
+
+      - name: Configure
+        working-directory: node-src
+        env:
+          # Point the build system at the Xcode 16 toolchain explicitly
+          CC: /Applications/Xcode_16.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang
+          CXX: /Applications/Xcode_16.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++
+        run: |
+          ./configure \
+            --prefix=/usr/local \                             # install root inside the staging directory
+            --openssl-use-def-ca-store \                      # use the macOS system Keychain for CA certificates instead of the bundled Mozilla store
+            --ninja \                                         # use Ninja instead of Make — faster incremental builds
+            --experimental-enable-pointer-compression \       # compress V8 heap pointers from 8 to 4 bytes, reducing heap size
+            --experimental-pointer-compression-shared-cage \  # share the pointer compression cage across Isolates in the same process
+            --without-siphash                                 # disable SipHash for V8 hash seeds, using a simpler alternative
+
+      - name: Build
+        working-directory: node-src
+        env:
+          CC: /Applications/Xcode_16.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang
+          CXX: /Applications/Xcode_16.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++
+        run: make
+
+      - name: Smoke test
+        working-directory: node-src
+        run: ./out/Release/node --version
+
+      - name: Install into staging directory
+        working-directory: node-src
+        run: make install DESTDIR=$PWD/../stage
+
+      - name: Smoke test npm
+        working-directory: node-src
+        run: ../stage/usr/local/bin/npm --version
+
+      - name: Package tarball (full install tree)
+        run: |
+          ARCHIVE="node-${{ env.NODE_TAG }}-darwin-arm64.tar.gz"
+          # tar up everything make install placed under stage/usr/local
+          tar czf "$ARCHIVE" -C stage/usr/local .
+          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          echo "Top-level entries:"
+          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -229,66 +389,142 @@ jobs:
           path: node-${{ env.NODE_TAG }}-darwin-arm64.tar.gz
           retention-days: 30
 
-  # # ─────────────────────────────────────────────
-  # # Windows x64
-  # # ─────────────────────────────────────────────
-  # build-windows-x64:
-  #   needs: resolve-version
-  #   runs-on: windows-2022
-  #   env:
-  #     NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
-  #   steps:
-  #     - name: Install NASM (required by OpenSSL)
-  #       run: choco install nasm -y
-
-  #     - name: Clone Node.js ${{ env.NODE_TAG }}
-  #       run: |
-  #         git clone --depth 1 --branch "$env:NODE_TAG" `
-  #           https://github.com/nodejs/node.git node-src
-
-  #     - name: Build  (vcbuild.bat handles everything on Windows)
-  #       working-directory: node-src
-  #       shell: cmd
-  #       run: vcbuild.bat release x64 no-cctest
-
-  #     - name: Smoke test
-  #       working-directory: node-src
-  #       run: .\Release\node.exe --version
-
-  #     - name: Package zip
-  #       working-directory: node-src
-  #       run: |
-  #         Compress-Archive -Path Release\node.exe `
-  #           -DestinationPath ..\node-${{ env.NODE_TAG }}-win-x64.zip
-  #       shell: pwsh
-
-  #     - name: Upload artifact
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: node-${{ env.NODE_TAG }}-win-x64
-  #         path: node-${{ env.NODE_TAG }}-win-x64.zip
-  #         retention-days: 30
-
   # ─────────────────────────────────────────────
-  # Summary job — lists all produced artifacts
+  # Windows x64
   # ─────────────────────────────────────────────
-  summary:
-    needs:
-      # - build-linux-x64
-      # - build-linux-arm64
-      # - build-macos-x64
-      - build-macos-arm64
-      # - build-windows-x64
-    runs-on: ubuntu-latest
-    if: always()
+  build-windows-x64:
+    needs: resolve-version
+    if: github.event_name != 'workflow_dispatch' || inputs.windows-x64
+    runs-on: windows-2022
+    env:
+      NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
     steps:
-      - name: Print build summary
+      - name: Install NASM (required by OpenSSL)
+        run: choco install nasm -y
+
+      - name: Clone Node.js ${{ env.NODE_TAG }}
         run: |
-          echo "## Node.js Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "| Platform | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          # echo "| Linux x64    | ${{ needs.build-linux-x64.result }} |" >> $GITHUB_STEP_SUMMARY
-          # echo "| Linux ARM64  | ${{ needs.build-linux-arm64.result }} |" >> $GITHUB_STEP_SUMMARY
-          # echo "| macOS x64    | ${{ needs.build-macos-x64.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| macOS ARM64  | ${{ needs.build-macos-arm64.result }} |" >> $GITHUB_STEP_SUMMARY
-          # echo "| Windows x64  | ${{ needs.build-windows-x64.result }} |" >> $GITHUB_STEP_SUMMARY
+          git clone --depth 1 --branch "$env:NODE_TAG" `
+            https://github.com/nodejs/node.git node-src
+      - name: Checkout repository (for patches)
+        uses: actions/checkout@v6
+        with:
+          path: repo
+
+      - name: Apply patches
+        shell: pwsh
+        run: |
+          $patches = Get-ChildItem -Path repo\patches -Filter *.patch -ErrorAction SilentlyContinue
+          if (-not $patches) {
+            Write-Host "No patches found, skipping."
+          } else {
+            foreach ($patch in $patches) {
+              Write-Host "Applying $($patch.Name)"
+              git -C node-src apply --verbose "../$($patch.FullName)"
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            }
+          }
+
+      - name: Build  (vcbuild.bat handles everything on Windows)
+        working-directory: node-src
+        shell: cmd
+        run: vcbuild.bat release x64 no-cctest
+
+      - name: Smoke test
+        working-directory: node-src
+        run: .\Release\node.exe --version
+
+      - name: Smoke test npm
+        working-directory: node-src
+        shell: cmd
+        # vcbuild places npm.cmd alongside node.exe in Release\
+        run: Release\npm.cmd --version
+
+      - name: Package zip (full install tree)
+        working-directory: node-src
+        shell: pwsh
+        run: |
+          $dest = "node-${{ env.NODE_TAG }}-win-x64"
+          New-Item -ItemType Directory -Path $dest | Out-Null
+          # vcbuild places the full installable layout directly in Release
+          # This mirrors what the official MSI installs: node.exe, npm/npx
+          # launchers, and the entire node_modules tree
+          Copy-Item Release\* $dest\ -Recurse -Force `
+            -Exclude "*.pdb","*.ilk","*.exp","*.lib","obj","tools"
+          Compress-Archive -Path $dest -DestinationPath "..\$dest.zip"
+          Write-Host "Archive size: $([math]::Round((Get-Item "..\$dest.zip").Length/1MB, 1)) MB"
+          Write-Host "Top-level entries:"
+          Get-ChildItem $dest | Select-Object -ExpandProperty Name
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: node-${{ env.NODE_TAG }}-win-x64
+          path: node-${{ env.NODE_TAG }}-win-x64.zip
+          retention-days: 30
+
+  # ─────────────────────────────────────────────
+  # Create GitHub Release and attach all binaries
+  # ─────────────────────────────────────────────
+  release:
+    needs:
+      - resolve-version
+      - build-linux-x64
+      - build-linux-arm64
+      - build-macos-x64
+      - build-macos-arm64
+      - build-windows-x64
+    runs-on: ubuntu-latest
+    # Release if every triggered build succeeded (skipped = not selected, which is fine)
+    if: >-
+      !contains(needs.*.result, 'failure') &&
+      !contains(needs.*.result, 'cancelled') &&
+      contains(needs.*.result, 'success')
+    permissions:
+      contents: write   # required to create releases and upload assets
+    env:
+      NODE_TAG: ${{ needs.resolve-version.outputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts  # each artifact lands in artifacts/<artifact-name>/
+
+      - name: Flatten artifacts into release-assets/
+        run: |
+          mkdir release-assets
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.zip" \) \
+            -exec mv {} release-assets/ \;
+          ls -lh release-assets/
+
+      - name: Generate SHA256 checksums
+        working-directory: release-assets
+        run: |
+          sha256sum * > SHASUMS256.txt
+          cat SHASUMS256.txt
+
+      - name: Create GitHub Release and upload assets
+        run: |
+          if gh release view "$NODE_TAG" --repo "$GITHUB_REPOSITORY" &>/dev/null; then
+            echo "Release $NODE_TAG already exists — updating assets."
+
+            # Delete any existing assets that share a name with what we're about to upload
+            for file in release-assets/*; do
+              asset_name=$(basename "$file")
+              if gh release view "$NODE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq ".assets[].name" | grep -qx "$asset_name"; then
+                echo "Deleting existing asset: $asset_name"
+                gh release delete-asset "$NODE_TAG" "$asset_name" --repo "$GITHUB_REPOSITORY" --yes
+              fi
+            done
+
+            # Upload the fresh assets
+            gh release upload "$NODE_TAG" release-assets/* --repo "$GITHUB_REPOSITORY"
+          else
+            echo "Creating new release $NODE_TAG."
+            gh release create "$NODE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Node.js ${NODE_TAG} custom build" \
+              --notes "Custom build of Node.js ${NODE_TAG} from source. Verify downloads with \`SHASUMS256.txt\`." \
+              release-assets/*
+          fi
