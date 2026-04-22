@@ -445,7 +445,7 @@ jobs:
           } else {
             foreach ($patch in $patches) {
               Write-Host "Applying $($patch.Name)"
-              git -C node-src apply --verbose "../$($patch.FullName)"
+              git -C node-src apply --verbose "$($patch.FullName)"
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
           }
