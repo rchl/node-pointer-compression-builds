@@ -432,6 +432,7 @@ jobs:
 
       - name: Smoke test
         working-directory: node-src
+        shell: cmd
         run: .\Release\node.exe --version
 
       - name: Smoke test npm
