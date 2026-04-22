@@ -71,7 +71,6 @@ jobs:
         working-directory: node-src
         run: |
           # --prefix: install root inside the staging directory
-          # --release-urlbase: base URL embedded in the binary for update checks
           # --tag: cleared so the version string is clean (e.g. v24.14.1, not v24.14.1-custom)
           # --ninja: use Ninja instead of Make for faster incremental builds
           # --experimental-enable-pointer-compression: compress V8 heap pointers from 8 to 4 bytes, reducing heap size
@@ -79,7 +78,6 @@ jobs:
           # --without-siphash: disable SipHash for V8 hash seeds, using a simpler alternative
           ./configure \
             --prefix=/usr/local \
-            --release-urlbase=https://nodejs.org/download/release/ \
             --tag="" \
             --ninja \
             --experimental-enable-pointer-compression \
