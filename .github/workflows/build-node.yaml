@@ -430,6 +430,11 @@ jobs:
         shell: cmd
         run: vcbuild.bat release x64 no-cctest
 
+      - name: List Release directory
+        working-directory: node-src
+        shell: pwsh
+        run: Get-ChildItem Release | Select-Object Name, Length
+
       - name: Smoke test
         working-directory: node-src
         run: .\Release\node.exe --version
@@ -437,8 +442,7 @@ jobs:
       - name: Smoke test npm
         working-directory: node-src
         shell: cmd
-        # vcbuild places npm.cmd alongside node.exe in Release\
-        run: Release\npm.cmd --version
+        run: .\Release\npm.cmd --version
 
       - name: Package zip (full install tree)
         working-directory: node-src
