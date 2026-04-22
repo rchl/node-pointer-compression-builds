@@ -67,7 +67,6 @@ jobs:
             done
           fi
 
-
       - name: Configure
         working-directory: node-src
         run: |
@@ -157,7 +156,6 @@ jobs:
             done
           fi
 
-
       - name: Configure
         working-directory: node-src
         env:
@@ -243,7 +241,6 @@ jobs:
               git -C node-src apply --verbose "../${patch}"
             done
           fi
-
 
       - name: Configure
         working-directory: node-src
@@ -335,7 +332,6 @@ jobs:
             done
           fi
 
-
       - name: Configure
         working-directory: node-src
         env:
@@ -406,6 +402,7 @@ jobs:
         run: |
           git clone --depth 1 --branch "$env:NODE_TAG" `
             https://github.com/nodejs/node.git node-src
+
       - name: Checkout repository (for patches)
         uses: actions/checkout@v6
         with:
