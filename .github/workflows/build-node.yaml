@@ -45,7 +45,6 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       ARTIFACT_NAME: node-${{ env.NODE_TAG }}-linux-x64
-      ARCHIVE: ${{ env.ARTIFACT_NAME }}.tar.gz
     steps:
       - name: Install build dependencies
         run: |
@@ -99,21 +98,21 @@ jobs:
         run: make install DESTDIR=$PWD/../stage
 
       - name: Smoke test npm
-        run: ../stage/usr/local/bin/npm --version
+        run: ../stage/usr/local/$ARTIFACT_NAME/bin/npm --version
         working-directory: node-src
 
       - name: Package tarball (full install tree)
         run: |
-          tar czf "$ARCHIVE" -C stage/usr/local $ARTIFACT_NAME
-          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          tar czf "$ARTIFACT_NAME.tar.gz" -C stage/usr/local $ARTIFACT_NAME
+          echo "Archive size: $(du -sh $ARTIFACT_NAME.tar.gz | cut -f1)"
           echo "Top-level entries:"
-          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
+          tar tzf "$ARTIFACT_NAME.tar.gz" | cut -d/ -f1-2 | sort -u | head -20
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.ARCHIVE }}
+          path: ${{ env.ARTIFACT_NAME }}.tar.gz
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   # ─────────────────────────────────────────────
@@ -124,7 +123,6 @@ jobs:
     runs-on: ubuntu-24.04-arm
     env:
       ARTIFACT_NAME: node-${{ env.NODE_TAG }}-linux-arm64
-      ARCHIVE: ${{ env.ARTIFACT_NAME }}.tar.gz
     steps:
       - name: Install build dependencies
         run: |
@@ -183,20 +181,20 @@ jobs:
 
       - name: Smoke test npm
         working-directory: node-src
-        run: ../stage/usr/local/bin/npm --version
+        run: ../stage/usr/local/$ARTIFACT_NAME/bin/npm --version
 
       - name: Package tarball (full install tree)
         run: |
-          tar czf "$ARCHIVE" -C stage/usr/local $ARTIFACT_NAME
-          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          tar czf "$ARTIFACT_NAME.tar.gz" -C stage/usr/local $ARTIFACT_NAME
+          echo "Archive size: $(du -sh $ARTIFACT_NAME.tar.gz | cut -f1)"
           echo "Top-level entries:"
-          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
+          tar tzf "$ARTIFACT_NAME.tar.gz" | cut -d/ -f1-2 | sort -u | head -20
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.ARCHIVE }}
+          path: ${{ env.ARTIFACT_NAME }}.tar.gz
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   # ─────────────────────────────────────────────
@@ -207,7 +205,6 @@ jobs:
     runs-on: macos-15-intel          # last Intel runner
     env:
       ARTIFACT_NAME: node-${{ env.NODE_TAG }}-darwin-x64
-      ARCHIVE: ${{ env.ARTIFACT_NAME }}.tar.gz
     steps:
       - name: Install build dependencies
         run: brew install python3 openssl pkg-config ninja
@@ -257,20 +254,20 @@ jobs:
 
       - name: Smoke test npm
         working-directory: node-src
-        run: ../stage/usr/local/bin/npm --version
+        run: ../stage/usr/local/$ARTIFACT_NAME/bin/npm --version
 
       - name: Package tarball (full install tree)
         run: |
-          tar czf "$ARCHIVE" -C stage/usr/local $ARTIFACT_NAME
-          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          tar czf "$ARTIFACT_NAME.tar.gz" -C stage/usr/local $ARTIFACT_NAME
+          echo "Archive size: $(du -sh $ARTIFACT_NAME.tar.gz | cut -f1)"
           echo "Top-level entries:"
-          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
+          tar tzf "$ARTIFACT_NAME.tar.gz" | cut -d/ -f1-2 | sort -u | head -20
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.ARCHIVE }}
+          path: ${{ env.ARTIFACT_NAME }}.tar.gz
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   # ─────────────────────────────────────────────
@@ -281,7 +278,6 @@ jobs:
     runs-on: macos-15          # M1/M2 runner — ships with Xcode 16 (Clang 16+)
     env:
       ARTIFACT_NAME: node-${{ env.NODE_TAG }}-darwin-arm64
-      ARCHIVE: ${{ env.ARTIFACT_NAME }}.tar.gz
     steps:
       - name: Select Xcode 16
         # Ensures Clang 16+ is active — required by V8's C++20 TypeIndex cast
@@ -348,20 +344,20 @@ jobs:
 
       - name: Smoke test npm
         working-directory: node-src
-        run: ../stage/usr/local/bin/npm --version
+        run: ../stage/usr/local/$ARTIFACT_NAME/bin/npm --version
 
       - name: Package tarball (full install tree)
         run: |
-          tar czf "$ARCHIVE" -C stage/usr/local $ARTIFACT_NAME
-          echo "Archive size: $(du -sh $ARCHIVE | cut -f1)"
+          tar czf "$ARTIFACT_NAME.tar.gz" -C stage/usr/local $ARTIFACT_NAME
+          echo "Archive size: $(du -sh $ARTIFACT_NAME.tar.gz | cut -f1)"
           echo "Top-level entries:"
-          tar tzf "$ARCHIVE" | cut -d/ -f1-2 | sort -u | head -20
+          tar tzf "$ARTIFACT_NAME.tar.gz" | cut -d/ -f1-2 | sort -u | head -20
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ARTIFACT_NAME }}
-          path: ${{ env.ARCHIVE }}
+          path: ${{ env.ARTIFACT_NAME }}.tar.gz
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   # ─────────────────────────────────────────────
