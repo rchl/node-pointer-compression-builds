@@ -478,12 +478,6 @@ jobs:
       - name: Build
         working-directory: node-src
         shell: cmd
-        run: vcbuild.bat release arm64 no-cctest
-
-      - name: Copy npm into Release
-        working-directory: node-src
-        shell: cmd
-        # vcbuild does not copy npm automatically — run the npm target explicitly
         run: vcbuild.bat release arm64 no-cctest package
 
       - name: Smoke test
@@ -539,6 +533,13 @@ jobs:
 
       - name: Generate SHA256 checksums
         working-directory: release-assets
+        if: >-
+          needs.build-linux-x64.result == 'success' &&
+          needs.build-linux-arm64.result == 'success' &&
+          needs.build-macos-x64.result == 'success' &&
+          needs.build-macos-arm64.result == 'success' &&
+          needs.build-windows-x64.result == 'success' &&
+          needs.build-windows-arm64.result == 'success'
         run: |
           sha256sum * > SHASUMS256.txt
           cat SHASUMS256.txt
