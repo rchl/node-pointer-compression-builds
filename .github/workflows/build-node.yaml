@@ -519,7 +519,7 @@ jobs:
             echo "Creating new release $NODE_TAG."
             gh release create "$NODE_TAG" \
               --repo "$GITHUB_REPOSITORY" \
-              --title "Node.js ${NODE_TAG} custom build" \
+              --title "${NODE_TAG}" \
               --notes "Custom build of Node.js ${NODE_TAG} from source. Verify downloads with \`SHASUMS256.txt\`." \
               release-assets/*
           fi

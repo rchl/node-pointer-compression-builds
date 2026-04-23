@@ -17,26 +17,3 @@ index fa25de8c316b71d3ad5b55b5ce398b69a5d4a965..fc48438060e0dd84edc60d1aebf3d094
    # We set v8_enable_pointer_compression_shared_cage to 0 always, even when
    # pointer compression is enabled so that we don't accidentally enable shared
    # cage mode when pointer compression is on.
-diff --git a/unofficial.gni b/unofficial.gni
-index aa78f9ce60c0439536eaf6e23880e30ebef0e1a9..e0b1eccee6e5200dcdc0d0086e2b21a56f850beb 100644
---- a/unofficial.gni
-+++ b/unofficial.gni
-@@ -315,6 +315,7 @@ template("node_gn_build") {
-   }
- 
-   executable("node_js2c") {
-+    defines = []
-     deps = [
-       "deps/uv",
-       "$node_simdutf_path",
-@@ -328,6 +329,10 @@ template("node_gn_build") {
-       "src/builtin_info.h",
-     ]
-     include_dirs = [ "src" ]
-+
-+    if (!is_win) {
-+      defines += [ "NODE_JS2C_USE_STRING_LITERALS" ]
-+    }
-   }
- 
-   action("run_node_js2c") {
