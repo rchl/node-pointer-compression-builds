@@ -31,6 +31,10 @@ on:
 env:
   ARTIFACT_RETENTION_DAYS: 1
   NODE_TAG: v24.15.0
+  GIT_AUTHOR_NAME: github-actions[bot]
+  GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
+  GIT_COMMITTER_NAME: github-actions[bot]
+  GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
 
 jobs:
   # ─────────────────────────────────────────────
