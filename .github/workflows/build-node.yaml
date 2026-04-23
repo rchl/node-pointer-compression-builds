@@ -520,6 +520,6 @@ jobs:
             gh release create "$NODE_TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --title "${NODE_TAG}" \
-              --notes "Custom build of Node.js ${NODE_TAG} from source. Verify downloads with \`SHASUMS256.txt\`." \
+              --notes "Custom build of Node.js ${NODE_TAG} from source that has pointer compression enabled. Verify downloads with \`SHASUMS256.txt\`." \
               release-assets/*
           fi
