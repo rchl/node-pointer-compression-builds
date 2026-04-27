@@ -42,7 +42,7 @@ jobs:
   # ─────────────────────────────────────────────
   build-linux-x64:
     if: inputs.linux-x64
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Set artifact name
         run: |
@@ -124,7 +124,7 @@ jobs:
   # ─────────────────────────────────────────────
   build-linux-arm64:
     if: inputs.linux-arm64
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-22.04-arm
     steps:
       - name: Set artifact name
         run: |
