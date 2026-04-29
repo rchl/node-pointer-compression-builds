@@ -80,7 +80,6 @@ jobs:
           CXX: g++-12
         run: |
           # --prefix: install root inside the staging directory
-          # --tag: cleared so the version string is clean (e.g. v24.14.1, not v24.14.1-custom)
           # --ninja: use Ninja instead of Make for faster incremental builds
           # --experimental-enable-pointer-compression: compress V8 heap pointers from 8 to 4 bytes, reducing heap size
           # --experimental-pointer-compression-shared-cage: share the pointer compression cage across Isolates in the same process
